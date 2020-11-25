@@ -19,55 +19,50 @@ ASK = 'ask'
 SPREAD = 'spread'
 PRICE = 'price'
 OHLC = [OPEN, HIGH, LOW, CLOSE]
-OHLCV = [OPEN, HIGH, LOW, VOLUME]
+OHLCV = [OPEN, HIGH, LOW, CLOSE, VOLUME]
 PV = [PRICE, VOLUME]
 BAV = [BID, ASK, VOLUME]
 BASV = [BID, ASK, SPREAD, VOLUME]
 
-DATA_TYPE_PANDAS = 0
-DATA_TYPE_XM = 1
+DATA_TYPE_ARRAYS = 0
+DATA_TYPE_PANDAS = 1
+DATA_TYPE_XM = 2
 
 class Timeseries:
     
-    def __init__(self, data, data_type, names=OHLC, index=None):
+    def __init__(self, data, data_type, names=OHLC):
         values = []
         time = []
-        dic = {}
-        if data_type == DATA_TYPE_PANDAS:
+        n = len(names)
+        if  data_type == DATA_TYPE_PANDAS:
             time = TimeUtility.toDateTimeList(list(data[TIME].values))
             values = []
             for name in names:
-                dic[name] = data[name]
                 values.append(data[name])
+        elif data_type == DATA_TYPE_ARRAYS:
+            time = data[0]
+            values = data[1:n + 1]
         elif data_type == DATA_TYPE_XM:
             for d in data:
-                time.append(TimeUtility.toNaive(d[0]))
+                time.append(d[0])
             values = []
-            dic = {}
-            for name, i in zip(names, index):
+            for i in range(len(names)):
                 value = []
                 for d in data:
                     value.append(d[i])
                 values.append(value)
-                dic[name] = value
-        array = []
-        n = len(time)
-        for i in range(n):
-            d = [time[i]]
-            for j in range(len(names)):
-                d.append(values[j][i])
-            array.append(d)
         self.time = time
         self.values = values
-        self.dic = dic
-        self.values_in_time = array
-        self.length = n
+        self.length = len(time)
         self.names = names
         return
     
     def data(self, name):
-        return self.dic[name]
-    
+        for i in range(len(self.names)):
+            if self.names[i] == name:
+                return self.values[i]
+        return []
+
     def dataList(self, names):
         out = []
         for name in names:
@@ -168,7 +163,13 @@ class Timeseries:
             if i_begin < 0:
                 i_begin = 0
         return self.indexRangeFilter(i_begin, i_end)
-       
+
+    def split(self, rate):
+        m = int(self.length * rate + 0.5)
+        ts1 = self.slice(0, m)
+        ts2 = self.slice(m, None)
+        return [ts1, ts2]
+
     def slice(self, begin, stop):
         if begin is None:
             begin = 0
@@ -190,11 +191,17 @@ class Timeseries:
         time = []
         values = []
         if stop >= begin:
-            for i in range(begin, stop):
-                time.append(self.time[i])
-                values.append(self.values[i])
+            time = self.time[begin:stop]
+            for j in range(len(self.values)):
+                value = self.values[j]
+                values.append(value[begin:stop])
         else:
-            for i in range(begin, stop, -1):
-                time.append(self.time[i])
-                values.append(self.values[i])
-        return Timeseries(time, values, name=self.names)
+            for j in range(begin, stop, -1):
+                time.append(self.time[j])
+            for j in range(len(self.values)):
+                value = []
+                for i in range(begin, stop, -1):
+                    value.append(self.values[j][i])
+                values.append(value)
+
+        return Timeseries([time] + values, DATA_TYPE_ARRAYS, names=self.names)

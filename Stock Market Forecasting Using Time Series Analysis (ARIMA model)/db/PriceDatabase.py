@@ -2,7 +2,7 @@
 import os
 import sys
 current_dir = os.path.abspath(os.path.dirname(__file__))
-sys.path.append('../model')
+sys.path.append('../datatype')
 sys.path.append('../setting')
 sys.path.append('../utility')
 
