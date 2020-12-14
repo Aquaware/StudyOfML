@@ -17,16 +17,15 @@ ANT = 'ant'
 LABEL = {ANT: 0, BEE: 1}
 
 class DataSet(data.Dataset):
-    def __init__(self, phase, size, mean, std, dir_path):
+    def __init__(self, phase, transform, file_list):
         self.phase = phase
-        self.size = size
-        self.mean = mean
-        self.std = std
-        self.dir_path = dir_path
-        self.file_list = self.fileList(dir_path)
-        print(self.file_list)
+        self.file_list = file_list
+        self.transform = transform
+        #print(self.file_list)
 
     def fileList(self, dir_path):
+
+        #print(os.getcwd())
         out = []
         for holder, subholders, files in os.walk(dir_path):
             for file in files:
@@ -37,12 +36,14 @@ class DataSet(data.Dataset):
         return len(self.file_list)
 
     def __getitem__(self, index):
-        transform = ImageTransform(self.size, self.mean, self.std)
+
         path = self.file_list[index]
         image = Image.open(path)
-        data = transform(image)
+        data = self.transform(image)
         if path.find('ants') >= 0:
             target = LABEL[ANT]
         elif path.find('bees') >= 0:
             target = LABEL[BEE]
+        else:
+            target = None
         return (data, target)
