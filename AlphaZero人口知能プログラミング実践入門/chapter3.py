@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 
 def runMnist():
     (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
-    showImages(train_images, train_labels)
+    #showImages(train_images, train_labels)
     shape = train_images.shape
-    image_size = shape[1]
+    image_size = shape[1] * shape[2]
     train_images = train_images.reshape((shape[0], shape[1] * shape[2]))
     train_labels = to_categorical(train_labels)
     shape = test_images.shape
@@ -23,10 +23,32 @@ def runMnist():
              'hidden': [128, 'sigmoid'],
              'dropout':[0.5],
              'output': [10, 'softmax']}
-    model = buildModel(params)
+    model = createModel(params)
     print(train_images.shape, train_labels.shape, test_images.shape, test_labels.shape)
+    model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=0.1), metrics=['acc'])
     
-def buildModel(params):
+    
+    # learning
+    history = model.fit(train_images, train_labels, batch_size=500, epochs=5, validation_split=0.2)
+    plt.plot(history.history['acc'], label='acc')
+    plt.plot(history.history['val_acc'], label='val_acc')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(loc='best')
+    plt.show()
+    
+    # test
+    loss, acc = model.evaluate(test_images, test_labels)
+    print('loss:{:.3f}\nacc: {:.3f}'.format(loss, acc))
+    
+    # predict
+    images = test_images[0:10]
+    predictions = model.predict(images)
+    predictions = np.argmax(predictions, axis=1)
+    images = [images[i].reshape((shape[1], shape[2])) for i in range(len(images))]
+    showImages(images, predictions)
+    
+def createModel(params):
     model = Sequential()
     p = params['input']
     model.add(Dense(p[0], activation=p[1], input_shape=(p[2],)))
