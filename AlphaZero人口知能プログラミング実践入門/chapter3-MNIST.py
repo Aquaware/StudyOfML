@@ -23,7 +23,7 @@ def runMnist():
              'hidden': [128, 'sigmoid'],
              'dropout':[0.5],
              'output': [10, 'softmax']}
-    model = createModel(params)
+    model = createMnistModel(params)
     print(train_images.shape, train_labels.shape, test_images.shape, test_labels.shape)
     model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=0.1), metrics=['acc'])
     
@@ -48,7 +48,7 @@ def runMnist():
     images = [images[i].reshape((shape[1], shape[2])) for i in range(len(images))]
     showImages(images, predictions)
     
-def createModel(params):
+def createMnistModel(params):
     model = Sequential()
     p = params['input']
     model.add(Dense(p[0], activation=p[1], input_shape=(p[2],)))
@@ -67,6 +67,9 @@ def showImages(images, labels):
         plt.title(str(labels[i]))
         plt.imshow(images[i], 'gray')
     plt.show()
+
+# --------------------------------
+
     
 if __name__ == '__main__':
     runMnist()
